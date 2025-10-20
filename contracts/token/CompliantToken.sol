@@ -1,42 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IdentityRegistry} from "../compliance/IdentityRegistry.sol";
 import {ModularCompliance} from "../compliance/ModularCompliance.sol";
 
 /// @title CompliantToken — ERC-20 gated on ERC-3643 identity verification
-/// @notice `mint` and every transfer require the receiver to be verified
+/// @notice Every mint and transfer requires the receiver to be verified
 ///         (`IdentityRegistry.isVerified`) and the move to pass the
-///         `ModularCompliance` country-allowlist + freeze gate. Minimal
-///         self-contained ERC-20 (no external dependencies).
-contract CompliantToken {
-    string public name;
-    string public symbol;
-    uint8 public constant decimals = 18;
-
-    uint256 public totalSupply;
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
-
+///         `ModularCompliance` country-allowlist + freeze gate (enforced in
+///         `_update`, so mint/transfer/transferFrom all share one gate).
+contract CompliantToken is ERC20 {
     address public owner;
     IdentityRegistry public identityRegistry;
     ModularCompliance public compliance;
     mapping(address => bool) private _agents;
+    /// @dev True while forceTransfer runs: recovery bypasses the gates.
+    bool private _recovering;
 
-    event OwnerUpdated(address indexed oldOwner, address indexed newOwner);
     event AgentAdded(address indexed agent);
     event AgentRemoved(address indexed agent);
     event ComplianceBound(address indexed compliance_);
     event IdentityRegistryBound(address indexed registry);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner_, address indexed spender, uint256 value);
 
     error NotAuthorized();
     error ReceiverNotVerified();
     error TransferBlockedByCompliance();
     error ZeroAddress();
-    error InsufficientBalance();
-    error InsufficientAllowance();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotAuthorized();
@@ -53,11 +43,9 @@ contract CompliantToken {
         string memory symbol_,
         address identityRegistry_,
         address compliance_
-    ) {
+    ) ERC20(name_, symbol_) {
         if (identityRegistry_ == address(0) || compliance_ == address(0)) revert ZeroAddress();
         owner = msg.sender;
-        name = name_;
-        symbol = symbol_;
         identityRegistry = IdentityRegistry(identityRegistry_);
         compliance = ModularCompliance(compliance_);
     }
@@ -95,61 +83,30 @@ contract CompliantToken {
 
     /// @notice Mint `amount` to a verified, compliance-passing receiver. Agent only.
     function mint(address to, uint256 amount) external onlyAgent {
-        if (to == address(0)) revert ZeroAddress();
-        if (!identityRegistry.isVerified(to)) revert ReceiverNotVerified();
-        if (!compliance.canTransfer(address(0), to)) revert TransferBlockedByCompliance();
-        totalSupply += amount;
-        balanceOf[to] += amount;
-        emit Transfer(address(0), to, amount);
+        _mint(to, amount);
     }
 
     /// @notice Burn `amount` from the caller.
     function burn(uint256 amount) external {
-        if (balanceOf[msg.sender] < amount) revert InsufficientBalance();
-        balanceOf[msg.sender] -= amount;
-        totalSupply -= amount;
-        emit Transfer(msg.sender, address(0), amount);
-    }
-
-    function approve(address spender, uint256 amount) external returns (bool) {
-        allowance[msg.sender][spender] = amount;
-        emit Approval(msg.sender, spender, amount);
-        return true;
-    }
-
-    function transfer(address to, uint256 amount) external returns (bool) {
-        _transfer(msg.sender, to, amount);
-        return true;
-    }
-
-    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
-        uint256 allowed = allowance[from][msg.sender];
-        if (allowed < amount) revert InsufficientAllowance();
-        if (allowed != type(uint256).max) {
-            allowance[from][msg.sender] = allowed - amount;
-        }
-        _transfer(from, to, amount);
-        return true;
+        _burn(msg.sender, amount);
     }
 
     /// @notice Agent-only recovery: move `amount` from `from` to `to`,
     ///         bypassing verification and compliance gates (standard ERC-3643
     ///         recovery semantics for frozen / lost wallets).
     function forceTransfer(address from, address to, uint256 amount) external onlyAgent {
-        if (from == address(0) || to == address(0)) revert ZeroAddress();
-        if (balanceOf[from] < amount) revert InsufficientBalance();
-        balanceOf[from] -= amount;
-        balanceOf[to] += amount;
-        emit Transfer(from, to, amount);
+        _recovering = true;
+        _transfer(from, to, amount);
+        _recovering = false;
     }
 
-    function _transfer(address from, address to, uint256 amount) internal {
-        if (to == address(0)) revert ZeroAddress();
-        if (!identityRegistry.isVerified(to)) revert ReceiverNotVerified();
-        if (!compliance.canTransfer(from, to)) revert TransferBlockedByCompliance();
-        if (balanceOf[from] < amount) revert InsufficientBalance();
-        balanceOf[from] -= amount;
-        balanceOf[to] += amount;
-        emit Transfer(from, to, amount);
+    /// @notice Single transfer gate for mint (from == 0), burns excluded
+    ///         (to == 0), and all transfers: receiver verified + compliance.
+    function _update(address from, address to, uint256 value) internal override {
+        if (!_recovering && to != address(0)) {
+            if (!identityRegistry.isVerified(to)) revert ReceiverNotVerified();
+            if (!compliance.canTransfer(from, to)) revert TransferBlockedByCompliance();
+        }
+        super._update(from, to, value);
     }
 }
