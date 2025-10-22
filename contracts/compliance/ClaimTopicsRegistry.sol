@@ -10,7 +10,6 @@ contract ClaimTopicsRegistry {
     uint256[] private _claimTopics;
     mapping(uint256 => bool) private _isRequired;
 
-    event OwnerUpdated(address indexed oldOwner, address indexed newOwner);
     event ClaimTopicAdded(uint256 indexed topic);
     event ClaimTopicRemoved(uint256 indexed topic);
 

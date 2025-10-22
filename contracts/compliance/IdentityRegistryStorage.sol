@@ -12,7 +12,6 @@ contract IdentityRegistryStorage {
     mapping(address => address) private _identityOf;
     mapping(address => uint16) private _countryOf;
 
-    event OwnerUpdated(address indexed oldOwner, address indexed newOwner);
     event AgentAdded(address indexed agent);
     event AgentRemoved(address indexed agent);
     event IdentityRegistered(address indexed wallet, address indexed identity);

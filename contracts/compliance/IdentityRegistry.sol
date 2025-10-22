@@ -27,7 +27,6 @@ contract IdentityRegistry {
 
     mapping(address => bool) private _agents;
 
-    event OwnerUpdated(address indexed oldOwner, address indexed newOwner);
     event AgentAdded(address indexed agent);
     event AgentRemoved(address indexed agent);
     event RegistryUpdated(address indexed topicsRegistry, address indexed issuersRegistry, address indexed storage_);

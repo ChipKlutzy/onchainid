@@ -52,7 +52,6 @@ contract DeployRWA is Script {
         console.log("ModularCompliance:", address(mc));
 
         CompliantToken token = new CompliantToken(tokenName, tokenSymbol, address(ir), address(mc));
-        mc.bindToken(address(token));
         console.log("CompliantToken:", address(token));
 
         vm.stopBroadcast();

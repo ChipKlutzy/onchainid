@@ -55,7 +55,6 @@ contract ComplianceTest is Test {
         mc.setCountryAllowed(COUNTRY_OK, true);
 
         token = new CompliantToken("RWA Token", "RWA", address(ir), address(mc));
-        mc.bindToken(address(token));
 
         _registerVerified(alice, COUNTRY_OK);
         _registerVerified(bob, COUNTRY_OK);

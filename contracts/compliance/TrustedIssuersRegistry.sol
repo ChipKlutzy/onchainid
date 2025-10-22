@@ -11,7 +11,6 @@ contract TrustedIssuersRegistry {
     mapping(address => bool) private _isTrusted;
     mapping(address => uint256[]) private _issuerTopics;
 
-    event OwnerUpdated(address indexed oldOwner, address indexed newOwner);
     event TrustedIssuerAdded(address indexed issuer);
     event TrustedIssuerRemoved(address indexed issuer);
     event IssuerTopicsUpdated(address indexed issuer);

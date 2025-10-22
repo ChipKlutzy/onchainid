@@ -4,22 +4,17 @@ pragma solidity ^0.8.26;
 import {IdentityRegistry} from "./IdentityRegistry.sol";
 
 /// @title ModularCompliance — ERC-3643 country allowlist + freeze module
-/// @notice Bound to one IdentityRegistry (for per-wallet countries) and one
-///         token (the only caller allowed to mutate freeze state on its
-///         behalf is the owner). `canTransfer` returns false when either side
-///         is frozen or lives in a non-allowlisted country. Mint (from == 0)
-///         skips the sender-side checks.
+/// @notice Bound to one IdentityRegistry (for per-wallet countries).
+///         `canTransfer` returns false when either side is frozen or lives
+///         in a non-allowlisted country. Mint (from == 0) skips sender checks.
 contract ModularCompliance {
     address public owner;
 
     IdentityRegistry public identityRegistry;
-    address public token;
 
     mapping(address => bool) private _frozen;
     mapping(uint16 => bool) private _countryAllowed;
 
-    event OwnerUpdated(address indexed oldOwner, address indexed newOwner);
-    event TokenBound(address indexed token);
     event WalletFrozen(address indexed wallet);
     event WalletUnfrozen(address indexed wallet);
     event CountryAllowlistUpdated(uint16 indexed country, bool allowed);
@@ -36,13 +31,6 @@ contract ModularCompliance {
         if (identityRegistry_ == address(0)) revert ZeroAddress();
         owner = msg.sender;
         identityRegistry = IdentityRegistry(identityRegistry_);
-    }
-
-    /// @notice Bind the token this module governs. Owner only.
-    function bindToken(address token_) external onlyOwner {
-        if (token_ == address(0)) revert ZeroAddress();
-        token = token_;
-        emit TokenBound(token_);
     }
 
     /// @notice Freeze `wallet`: it can neither send nor receive. Owner only.
