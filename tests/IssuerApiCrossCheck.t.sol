@@ -41,7 +41,7 @@ contract IssuerApiCrossCheckTest is Test {
         // Wired model: the claim's `issuer` is the ClaimIssuer contract (the
         // trusted issuer in IdentityRegistry), and the signature is the API's.
         bytes32 claimId = idy.addClaim(TOPIC_KYC, 1, address(claimIssuer), SIGNATURE, hex"abcd", "");
-        (uint256 topic, , address issuer, , , , bool revoked) = idy.getClaim(claimId);
+        (uint256 topic,, address issuer,,,, bool revoked) = idy.getClaim(claimId);
         assertEq(topic, TOPIC_KYC);
         assertEq(issuer, address(claimIssuer));
         assertFalse(revoked);

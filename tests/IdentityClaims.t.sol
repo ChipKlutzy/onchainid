@@ -27,8 +27,7 @@ contract IdentityClaimsTest is Test {
         bytes32 claimId = _addClaim();
         assertEq(claimId, keccak256(abi.encode(issuer, TOPIC_KYC)));
         assertTrue(id_.verifyClaim(claimId));
-        (uint256 topic, uint256 scheme, address gotIssuer,,, string memory uri, bool revoked) =
-            id_.getClaim(claimId);
+        (uint256 topic, uint256 scheme, address gotIssuer,,, string memory uri, bool revoked) = id_.getClaim(claimId);
         assertEq(topic, TOPIC_KYC);
         assertEq(scheme, SCHEME_ECDSA);
         assertEq(gotIssuer, issuer);

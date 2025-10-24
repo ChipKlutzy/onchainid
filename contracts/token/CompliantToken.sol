@@ -38,12 +38,9 @@ contract CompliantToken is ERC20 {
         _;
     }
 
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        address identityRegistry_,
-        address compliance_
-    ) ERC20(name_, symbol_) {
+    constructor(string memory name_, string memory symbol_, address identityRegistry_, address compliance_)
+        ERC20(name_, symbol_)
+    {
         if (identityRegistry_ == address(0) || compliance_ == address(0)) revert ZeroAddress();
         owner = msg.sender;
         identityRegistry = IdentityRegistry(identityRegistry_);

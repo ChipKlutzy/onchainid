@@ -39,8 +39,7 @@ contract IdFactory {
     }
 
     function _computeAddress(bytes32 finalSalt, bytes32 bytecodeHash) internal view returns (address) {
-        return address(
-            uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), finalSalt, bytecodeHash))))
-        );
+        return
+            address(uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), finalSalt, bytecodeHash)))));
     }
 }

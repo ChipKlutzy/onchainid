@@ -44,11 +44,7 @@ contract IdentityRegistry {
         _;
     }
 
-    constructor(
-        address topicsRegistry,
-        address issuersRegistry,
-        address identityStorage_
-    ) {
+    constructor(address topicsRegistry, address issuersRegistry, address identityStorage_) {
         if (topicsRegistry == address(0) || issuersRegistry == address(0) || identityStorage_ == address(0)) {
             revert ZeroAddress();
         }
@@ -127,11 +123,7 @@ contract IdentityRegistry {
         return true;
     }
 
-    function _topicCovered(address identity_, uint256 topic, address[] memory issuers)
-        internal
-        view
-        returns (bool)
-    {
+    function _topicCovered(address identity_, uint256 topic, address[] memory issuers) internal view returns (bool) {
         if (identity_.code.length == 0) return false;
         for (uint256 i = 0; i < issuers.length; i++) {
             if (!trustedIssuersRegistry.isIssuerAuthorizedForTopic(issuers[i], topic)) continue;
@@ -141,7 +133,7 @@ contract IdentityRegistry {
             // trusted issuer over (identity, topic, data). Without this, an
             // identity owner could self-attest eligibility by naming a trusted
             // issuer on a claim with no valid signature.
-            (, , , bytes memory signature, bytes memory data, , ) = Identity(identity_).getClaim(claimId);
+            (,,, bytes memory signature, bytes memory data,,) = Identity(identity_).getClaim(claimId);
             if (_issuerSignatureValid(issuers[i], identity_, topic, data, signature)) return true;
         }
         return false;

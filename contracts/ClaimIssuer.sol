@@ -55,7 +55,8 @@ contract ClaimIssuer {
         returns (bool)
     {
         if (signature.length != 65) return false;
-        (address recovered, ECDSA.RecoverError err,) = ECDSA.tryRecover(ethSignedDigest(identity, topic, data), signature);
+        (address recovered, ECDSA.RecoverError err,) =
+            ECDSA.tryRecover(ethSignedDigest(identity, topic, data), signature);
         return err == ECDSA.RecoverError.NoError && recovered == signer;
     }
 
