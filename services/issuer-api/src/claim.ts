@@ -3,6 +3,7 @@ import {
   hashMessage,
   keccak256,
   parseAbiParameters,
+  recoverMessageAddress,
   type Address,
   type Hex,
 } from "viem";
@@ -83,6 +84,5 @@ export async function recoverClaimSigner(
   data: Hex,
   signature: Hex,
 ): Promise<Address> {
-  const { recoverMessageAddress } = await import("viem");
   return recoverMessageAddress({ message: { raw: claimDigest(identity, topic, data) }, signature });
 }

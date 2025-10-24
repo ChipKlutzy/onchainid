@@ -5,22 +5,20 @@ export function envAddr(key: string): `0x${string}` | undefined {
   const v = process.env[key];
   if (!v) return undefined;
   try {
-    return getAddress(v) as `0x${string}`;
+    return getAddress(v);
   } catch {
     return undefined;
   }
 }
 
+type Addr = `0x${string}` | undefined;
+
 export const ADDRESSES = {
-  idFactory: envAddr("NEXT_PUBLIC_ID_FACTORY") as `0x${string}` | undefined,
-  claimIssuer: envAddr("NEXT_PUBLIC_CLAIM_ISSUER") as `0x${string}` | undefined,
-  identityRegistry: envAddr("NEXT_PUBLIC_IDENTITY_REGISTRY") as
-    | `0x${string}`
-    | undefined,
-  compliantToken: envAddr("NEXT_PUBLIC_COMPLIANT_TOKEN") as
-    | `0x${string}`
-    | undefined,
-  compliance: envAddr("NEXT_PUBLIC_COMPLIANCE") as `0x${string}` | undefined,
+  idFactory: envAddr("NEXT_PUBLIC_ID_FACTORY") as Addr,
+  claimIssuer: envAddr("NEXT_PUBLIC_CLAIM_ISSUER") as Addr,
+  identityRegistry: envAddr("NEXT_PUBLIC_IDENTITY_REGISTRY") as Addr,
+  compliantToken: envAddr("NEXT_PUBLIC_COMPLIANT_TOKEN") as Addr,
+  compliance: envAddr("NEXT_PUBLIC_COMPLIANCE") as Addr,
 };
 
 export const KYC_TOPIC_DEFAULT = BigInt(

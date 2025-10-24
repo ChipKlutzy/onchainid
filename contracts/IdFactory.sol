@@ -17,23 +17,25 @@ contract IdFactory {
     /// @param salt Caller-chosen salt (e.g. keccak256(userId)).
     /// @param managementKey Raw key bytes for the identity's first MANAGEMENT key.
     function createIdentity(bytes32 salt, bytes memory managementKey) external returns (address identity) {
-        bytes32 finalSalt = keccak256(abi.encode(salt, keccak256(managementKey)));
-        bytes memory bytecode = abi.encodePacked(type(Identity).creationCode, abi.encode(managementKey));
-        bytes32 bytecodeHash = keccak256(bytecode);
-        address predicted = _computeAddress(finalSalt, bytecodeHash);
+        bytes32 finalSalt = _finalSalt(salt, managementKey);
+        address predicted = _computeAddress(finalSalt, keccak256(_bytecode(managementKey)));
         if (predicted.code.length != 0) revert AlreadyDeployed();
-        assembly {
-            identity := create2(0, add(bytecode, 0x20), mload(bytecode), finalSalt)
-        }
-        if (identity == address(0) || identity != predicted) revert DeploymentFailed();
+        identity = address(new Identity{salt: finalSalt}(managementKey));
+        if (identity != predicted) revert DeploymentFailed();
         emit IdentityDeployed(identity, salt, abi.decode(managementKey, (address)));
     }
 
     /// @notice Predict the deployment address without deploying.
     function computeAddress(bytes32 salt, bytes memory managementKey) external view returns (address) {
-        bytes32 finalSalt = keccak256(abi.encode(salt, keccak256(managementKey)));
-        bytes memory bytecode = abi.encodePacked(type(Identity).creationCode, abi.encode(managementKey));
-        return _computeAddress(finalSalt, keccak256(bytecode));
+        return _computeAddress(_finalSalt(salt, managementKey), keccak256(_bytecode(managementKey)));
+    }
+
+    function _finalSalt(bytes32 salt, bytes memory managementKey) internal pure returns (bytes32) {
+        return keccak256(abi.encode(salt, keccak256(managementKey)));
+    }
+
+    function _bytecode(bytes memory managementKey) internal pure returns (bytes memory) {
+        return abi.encodePacked(type(Identity).creationCode, abi.encode(managementKey));
     }
 
     function _computeAddress(bytes32 finalSalt, bytes32 bytecodeHash) internal view returns (address) {

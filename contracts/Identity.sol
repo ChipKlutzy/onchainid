@@ -66,7 +66,6 @@ contract Identity {
         string uri
     );
     event ClaimRevoked(bytes32 indexed claimId, address indexed revokedBy);
-    event ExecutionRequested(uint256 indexed executionId, address indexed to, uint256 indexed value, bytes data);
     event Executed(uint256 indexed executionId, address indexed to, uint256 indexed value, bytes data);
 
     // ------------------------------------------------------------------------
@@ -114,7 +113,7 @@ contract Identity {
     /// @notice Add a key with the given purposes. MANAGEMENT only.
     function addKey(bytes memory key, uint256[] memory purposes, uint256 keyType) external onlyManagement {
         bytes32 keyId = keccak256(key);
-        if (_keys[keyId].keyType != 0 || _keyIdsContains(keyId)) revert KeyAlreadyExists();
+        if (_keys[keyId].keyType != 0) revert KeyAlreadyExists();
         _keys[keyId] = Key({keyType: keyType, purposes: purposes, revoked: false});
         _keyIds.push(keyId);
         for (uint256 i = 0; i < purposes.length; i++) {
@@ -141,15 +140,14 @@ contract Identity {
         bytes32 senderId = keccak256(abi.encode(msg.sender));
         if (!_purposeKeys[1][senderId] && !_purposeKeys[2][senderId]) revert NotManagementKey();
         executionId = _executionNonce++;
-        emit ExecutionRequested(executionId, to, value, data);
         (bool ok,) = to.call{value: value}(data);
         if (!ok) revert ExecutionFailed();
         emit Executed(executionId, to, value, data);
     }
 
     function getKey(bytes32 keyId) external view returns (uint256 keyType, uint256[] memory purposes, bool revoked) {
-        if (!_keyIdsContains(keyId)) revert KeyNotFound();
         Key storage k = _keys[keyId];
+        if (k.keyType == 0) revert KeyNotFound();
         return (k.keyType, k.purposes, k.revoked);
     }
 
@@ -179,8 +177,7 @@ contract Identity {
         bytes32 senderId = keccak256(abi.encode(msg.sender));
         if (msg.sender != issuer && !_purposeKeys[1][senderId]) revert NotAuthorized();
         claimId = keccak256(abi.encode(issuer, topic));
-        bool fresh = bytes(_claims[claimId].signature).length == 0 && !_claims[claimId].revoked
-            && _claims[claimId].issuer == address(0);
+        bool fresh = _claims[claimId].issuer == address(0);
         _claims[claimId] =
             Claim({topic: topic, scheme: scheme, issuer: issuer, signature: signature, data: data, uri: uri, revoked: false});
         if (fresh) _claimIds.push(claimId);
