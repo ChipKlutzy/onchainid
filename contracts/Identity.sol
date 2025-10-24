@@ -179,13 +179,7 @@ contract Identity {
         claimId = keccak256(abi.encode(issuer, topic));
         bool fresh = _claims[claimId].issuer == address(0);
         _claims[claimId] = Claim({
-            topic: topic,
-            scheme: scheme,
-            issuer: issuer,
-            signature: signature,
-            data: data,
-            uri: uri,
-            revoked: false
+            topic: topic, scheme: scheme, issuer: issuer, signature: signature, data: data, uri: uri, revoked: false
         });
         if (fresh) _claimIds.push(claimId);
         emit ClaimAdded(claimId, topic, scheme, issuer, signature, data, uri);
